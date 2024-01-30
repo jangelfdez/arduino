@@ -11,10 +11,19 @@
 #include <Servo.h>
 
 #define SERIAL_BAUD 115200
-#define GARAGE_SERVO_PORT 7
+#define GARAGE_SERVO_PORT 11
+#define EXTERNAL_LIGHTS_INPUT_PORT A0
+#define EXTERNAL_LIGHTS_OUTPUT_PORT 3
+#define EXTERNAL_LIGHTS_THRESHOLD 500
+#define MOVEMENT_SENSOR_INPUT_PORT 4
+#define MOVEMENT_SENSOR_OUTPUT_PORT 5
+#define ON 1
+#define OFF 0
 
 BME280I2C bme;
 Servo garage_servo;
+
+int garage_servo_angle = 0;
 
 
 // 0 -> closed; 1 -> open
@@ -30,12 +39,14 @@ void setup() {
   setup_i2c_comm();
   setup_bme280_sensor();
   setup_garage_servo();
+  setup_external_lights();
+  setup_movement_sensor();
 }
 
 void loop() {
   check_outside_lights();
   check_movement_sensor();
-  
+
   if (Serial.available() > 0) {
     String incoming_command = Serial.readString();
     Serial.print("RX Command > ");
@@ -87,10 +98,11 @@ void loop() {
           Serial.println("-> Outside light status is " + String(outside_lights_status));
           break;
         }
-      default: {
+      default:
+        {
           Serial.println("No command associated with that value");
-        break;
-      }
+          break;
+        }
     }
   }
 }
@@ -107,36 +119,71 @@ void setup_i2c_comm() {
 }
 
 void setup_bme280_sensor() {
-  while (!bme.begin()) {
-    Serial.println("Could not find BME280 sensor!");
-    delay(1000);
-  }
-
-  switch (bme.chipModel()) {
-    case BME280::ChipModel_BME280:
-      Serial.println("Found BME280 sensor! Success.");
-      break;
-    case BME280::ChipModel_BMP280:
-      Serial.println("Found BMP280 sensor! No Humidity available.");
-      break;
-    default:
-      Serial.println("Found UNKNOWN sensor! Error!");
+  int retries = 3;
+  
+  while (retries) {
+    if (bme.begin()) {
+      switch (bme.chipModel()) {
+        case BME280::ChipModel_BME280:
+          Serial.println("Found BME280 sensor! Success.");
+          break;
+        case BME280::ChipModel_BMP280:
+          Serial.println("Found BMP280 sensor! No Humidity available.");
+          break;
+        default:
+          Serial.println("Found UNKNOWN sensor! Error!");
+      }
+      retries = 0;
+    } else {
+      Serial.println("Could not find BME280 sensor!");
+      delay(1000);
+    }
   }
 }
 
 void setup_garage_servo() {
   garage_servo.attach(GARAGE_SERVO_PORT);
+  garage_servo.write(0);
+}
+
+void setup_external_lights(){
+  pinMode(EXTERNAL_LIGHTS_INPUT_PORT, INPUT);
+}
+
+void setup_movement_sensor(){
+  pinMode(MOVEMENT_SENSOR_INPUT_PORT, INPUT);
+  pinMode(MOVEMENT_SENSOR_OUTPUT_PORT, OUTPUT);
 }
 
 void check_outside_lights() {
+  int input = analogRead(EXTERNAL_LIGHTS_INPUT_PORT);
+  if (input < EXTERNAL_LIGHTS_THRESHOLD){
+    digitalWrite(EXTERNAL_LIGHTS_OUTPUT_PORT, HIGH);
+    outside_lights_status = ON;
+  } else {
+    digitalWrite(EXTERNAL_LIGHTS_OUTPUT_PORT, LOW);
+    outside_lights_status = OFF;
+  }
   return;
 }
 
 void open_garage_door() {
+  while (garage_servo_angle < 180) {         
+    garage_servo.write(garage_servo_angle);  
+    delay(5);
+    garage_servo_angle++;
+  }
+  garage_door_status = ON;
   return;
 }
 
 void close_garage_door() {
+  while (garage_servo_angle > 0) {           
+    garage_servo.write(garage_servo_angle);  
+    delay(5);
+    garage_servo_angle--;
+  }
+  garage_door_status = OFF;
   return;
 }
 
@@ -151,5 +198,12 @@ float read_house_humidity() {
 }
 
 void check_movement_sensor() {
+  int input = digitalRead(MOVEMENT_SENSOR_INPUT_PORT);
+  if (value == HIGH)
+  {
+    digitalWrite(MOVEMENT_SENSOR_OUTPUT_PORT, HIGH);
+  } else {
+    digitalWrite(MOVEMENT_SENSOR_OUTPUT_PORT, LOW);
+  }
   return;
 }
