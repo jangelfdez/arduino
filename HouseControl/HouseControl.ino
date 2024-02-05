@@ -49,53 +49,53 @@ void loop() {
 
   if (Serial.available() > 0) {
     String incoming_command = Serial.readString();
-    Serial.print("RX Command > ");
+    //Serial.print("RX Command > ");
 
     switch (incoming_command.toInt()) {
       case 0:
         {
-          Serial.println("0 [Read Garage Door Status]");
-          Serial.println("-> Garage door status is " + String(garage_door_status));
+          //Serial.println("0 [Read Garage Door Status]");
+          Serial.println(String(garage_door_status));
           break;
         }
       case 1:
         {
-          Serial.println("1 [Open Garage Door]");
+          //Serial.println("1 [Open Garage Door]");
           open_garage_door();
-          Serial.println("-> Garage door is opened");
+          Serial.println("OK");
           break;
         }
       case 2:
         {
-          Serial.println("2 [Close Garage Door]");
+          //Serial.println("2 [Close Garage Door]");
           close_garage_door();
-          Serial.println("-> Garage door is closed");
+          Serial.println("OK");
           break;
         }
       case 3:
         {
-          Serial.println("3 [Read House Temperature]");
+          //Serial.println("3 [Read House Temperature]");
           float temp = read_house_temperature();
-          Serial.println("-> House temperature: " + String(temp));
+          Serial.println(String(temp));
           break;
         }
       case 4:
         {
-          Serial.println("4 [Read House Humidity]");
+          //Serial.println("4 [Read House Humidity]");
           float hum = read_house_humidity();
-          Serial.println("-> House humidity: " + String(hum));
+          Serial.println(String(hum));
           break;
         }
       case 5:
         {
-          Serial.println("5 [Read Movement Sensor Status]");
-          Serial.println("-> Movement sensor status is " + String(garage_door_status));
+          //Serial.println("5 [Read Movement Sensor Status]");
+          Serial.println(String(garage_door_status));
           break;
         }
       case 6:
         {
-          Serial.println("6 [Read Outside Lights Status]");
-          Serial.println("-> Outside light status is " + String(outside_lights_status));
+          //Serial.println("6 [Read Outside Lights Status]");
+          Serial.println(String(outside_lights_status));
           break;
         }
       default:
@@ -136,6 +136,7 @@ void setup_bme280_sensor() {
       retries = 0;
     } else {
       Serial.println("Could not find BME280 sensor!");
+      retries--;
       delay(1000);
     }
   }
@@ -199,7 +200,7 @@ float read_house_humidity() {
 
 void check_movement_sensor() {
   int input = digitalRead(MOVEMENT_SENSOR_INPUT_PORT);
-  if (value == HIGH)
+  if (input == HIGH)
   {
     digitalWrite(MOVEMENT_SENSOR_OUTPUT_PORT, HIGH);
   } else {
