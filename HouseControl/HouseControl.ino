@@ -13,21 +13,27 @@
 #define SERIAL_BAUD 115200
 #define GARAGE_SERVO_PORT 11
 #define EXTERNAL_LIGHTS_INPUT_PORT A0
-#define EXTERNAL_LIGHTS_OUTPUT_PORT 3
+#define EXTERNAL_LIGHTS_OUTPUT_PORT 2
 #define EXTERNAL_LIGHTS_THRESHOLD 500
-#define MOVEMENT_SENSOR_INPUT_PORT 4
+#define MOVEMENT_SENSOR_INPUT_PORT 3
 #define MOVEMENT_SENSOR_OUTPUT_PORT 5
+#define BLIND_CONTROL_ORANGE 8
+#define BLIND_CONTROL_GREEN 7
+#define BLIND_CONTROL_YELLOW 12
+#define BLIND_SERVO_PORT 10
 #define ON 1
 #define OFF 0
 
 BME280I2C bme;
 Servo garage_servo;
+Servo blind_servo;
 
 int garage_servo_angle = 0;
 
 
 // 0 -> closed; 1 -> open
 bool garage_door_status = 0;
+bool blind_status = 0;
 // 0 -> no movement; 1 -> movement
 bool movement_sensor_status = 0;
 // 0 -> off; 1 -> on
@@ -39,6 +45,7 @@ void setup() {
   setup_i2c_comm();
   setup_bme280_sensor();
   setup_garage_servo();
+  setup_blind_servo();
   setup_external_lights();
   setup_movement_sensor();
 }
@@ -89,7 +96,7 @@ void loop() {
       case 5:
         {
           //Serial.println("5 [Read Movement Sensor Status]");
-          Serial.println(String(garage_door_status));
+          garage_door_status = digitalRead(MOVEMENT_SENSOR_INPUT_PORT);
           break;
         }
       case 6:
@@ -98,9 +105,29 @@ void loop() {
           Serial.println(String(outside_lights_status));
           break;
         }
+      case 7:
+        {
+          //Serial.println("7 [Read Blind Status]");
+          Serial.println(String(blind_status));
+          break;
+        }
+      case 8:
+        {
+          //Serial.println("8 [Open Blind]");
+          open_blind();
+          Serial.println("OK");
+          break;
+        }
+      case 9:
+        {
+          //Serial.println("9 [Close Blind]");
+          close_blind();
+          Serial.println("OK");
+          break;
+        }
       default:
         {
-          Serial.println("No command associated with that value");
+          Serial.println("NOK");
           break;
         }
     }
@@ -120,7 +147,7 @@ void setup_i2c_comm() {
 
 void setup_bme280_sensor() {
   int retries = 3;
-  
+
   while (retries) {
     if (bme.begin()) {
       switch (bme.chipModel()) {
@@ -143,22 +170,33 @@ void setup_bme280_sensor() {
 }
 
 void setup_garage_servo() {
-  garage_servo.attach(GARAGE_SERVO_PORT);
-  garage_servo.write(0);
+  //garage_servo.attach(GARAGE_SERVO_PORT);
+  //garage_servo.write(0);
 }
 
-void setup_external_lights(){
+void setup_blind_servo() {
+  //blind_servo.attach(BLIND_SERVO_PORT);
+  pinMode(BLIND_CONTROL_YELLOW, OUTPUT);
+  pinMode(BLIND_CONTROL_ORANGE, OUTPUT);
+  pinMode(BLIND_CONTROL_GREEN, OUTPUT);
+  //digitalWrite(BLIND_CONTROL_ORANGE, LOW);
+  //digitalWrite(BLIND_CONTROL_YELLOW, LOW);
+}
+
+void setup_external_lights() {
   pinMode(EXTERNAL_LIGHTS_INPUT_PORT, INPUT);
+  pinMode(EXTERNAL_LIGHTS_OUTPUT_PORT, OUTPUT);
 }
 
-void setup_movement_sensor(){
+void setup_movement_sensor() {
   pinMode(MOVEMENT_SENSOR_INPUT_PORT, INPUT);
   pinMode(MOVEMENT_SENSOR_OUTPUT_PORT, OUTPUT);
+  digitalWrite(MOVEMENT_SENSOR_OUTPUT_PORT, LOW);
 }
 
 void check_outside_lights() {
   int input = analogRead(EXTERNAL_LIGHTS_INPUT_PORT);
-  if (input < EXTERNAL_LIGHTS_THRESHOLD){
+  if (input < EXTERNAL_LIGHTS_THRESHOLD) {
     digitalWrite(EXTERNAL_LIGHTS_OUTPUT_PORT, HIGH);
     outside_lights_status = ON;
   } else {
@@ -169,22 +207,52 @@ void check_outside_lights() {
 }
 
 void open_garage_door() {
-  while (garage_servo_angle < 180) {         
-    garage_servo.write(garage_servo_angle);  
+  garage_servo.attach(GARAGE_SERVO_PORT);
+  while (garage_servo_angle < 180) {
+    garage_servo.write(garage_servo_angle);
     delay(5);
     garage_servo_angle++;
   }
   garage_door_status = ON;
+  garage_servo.detach();
   return;
 }
 
 void close_garage_door() {
-  while (garage_servo_angle > 0) {           
-    garage_servo.write(garage_servo_angle);  
+  garage_servo.attach(GARAGE_SERVO_PORT);
+  while (garage_servo_angle > 0) {
+    garage_servo.write(garage_servo_angle);
     delay(5);
     garage_servo_angle--;
   }
   garage_door_status = OFF;
+  garage_servo.detach();
+  return;
+}
+
+void open_blind() {
+  blind_servo.attach(BLIND_SERVO_PORT);
+  blind_servo.write(180);
+  digitalWrite(BLIND_CONTROL_ORANGE, HIGH);
+  digitalWrite(BLIND_CONTROL_GREEN, LOW);
+  blind_status = ON;
+  delay(1200);
+  digitalWrite(BLIND_CONTROL_ORANGE, LOW);
+  digitalWrite(BLIND_CONTROL_YELLOW, LOW);
+  blind_servo.detach();
+  return;
+}
+
+void close_blind() {
+  blind_servo.attach(BLIND_SERVO_PORT);
+  blind_servo.write(180);
+  digitalWrite(BLIND_CONTROL_ORANGE, HIGH);
+  digitalWrite(BLIND_CONTROL_GREEN, HIGH);
+  delay(1200);
+  blind_status = OFF;
+  digitalWrite(BLIND_CONTROL_ORANGE, LOW);
+  digitalWrite(BLIND_CONTROL_YELLOW, LOW);
+  blind_servo.detach();
   return;
 }
 
@@ -200,11 +268,12 @@ float read_house_humidity() {
 
 void check_movement_sensor() {
   int input = digitalRead(MOVEMENT_SENSOR_INPUT_PORT);
-  if (input == HIGH)
-  {
+  if (input == LOW) {
     digitalWrite(MOVEMENT_SENSOR_OUTPUT_PORT, HIGH);
+    delay(500);
   } else {
     digitalWrite(MOVEMENT_SENSOR_OUTPUT_PORT, LOW);
+    delay(500);
   }
   return;
 }

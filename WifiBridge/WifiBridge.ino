@@ -7,8 +7,11 @@
 
 #define LED_BUILTIN 8
 
-const char *ssid = "test-serie";
-const char *password = NULL;
+//const char *ssid = "test-serie";
+//const char *password = NULL;
+
+const char* ssid = "LasColumnas";             // Change this to your WiFi SSID
+const char* password = "Passw0rd!Passw0rd!";  // Change this to your WiFi password
 
 WiFiServer server(80);
 
@@ -18,14 +21,32 @@ void setup() {
   Serial.begin(115200);
   Serial0.begin(115200, SERIAL_8N1, RXpin, TXpin);
 
-  if (!WiFi.softAP(ssid, password)) {
-    Serial.println("Soft AP creation failed.");
-    while (1)
-      ;
+
+  Serial.println();
+  Serial.println("******************************************************");
+  Serial.print("Connecting to ");
+  Serial.println(ssid);
+
+  WiFi.begin(ssid, password);
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
   }
-  IPAddress myIP = WiFi.softAPIP();
-  Serial.print("AP IP address: ");
-  Serial.println(myIP);
+
+  Serial.println("");
+  Serial.println("WiFi connected");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
+
+  // if (!WiFi.softAP(ssid, password)) {
+  //   Serial.println("Soft AP creation failed.");
+  //   while (1)
+  //     ;
+  // }
+  // IPAddress myIP = WiFi.softAPIP();
+  // Serial.print("AP IP address: ");
+  // Serial.println(myIP);
   server.begin();
 
 
@@ -36,12 +57,12 @@ void loop() {
 
   WiFiClient client = server.accept();  // listen for incoming clients
 
-  if (client) {                     // if you get a client,
+  if (client) {  // if you get a client,
     //Serial.println("New Client.");  // print a message out the serial port
-    String currentLine = "";        // make a String to hold incoming data from the client
-    while (client.connected()) {    // loop while the client's connected
-      if (client.available()) {     // if there's bytes to read from the client,
-        char c = client.read();     // read a byte, then
+    String currentLine = "";      // make a String to hold incoming data from the client
+    while (client.connected()) {  // loop while the client's connected
+      if (client.available()) {   // if there's bytes to read from the client,
+        char c = client.read();   // read a byte, then
         //Serial.write(c);
         if (c == '\n') {  // if the byte is a newline character
 
@@ -89,6 +110,15 @@ void loop() {
         }
         if (currentLine.endsWith("GET /2")) {
           Serial0.write("2");  // print it out the serial monitor
+          client.println("HTTP/1.1 200 OK");
+          client.println("Content-type:text/html");
+          client.println();
+
+          // the content of the HTTP response follows the header:
+          client.print("20");
+
+          // The HTTP response ends with another blank line:
+          client.println();
         }
         if (currentLine.endsWith("GET /3")) {
           Serial0.write("3");  // print it out the serial monitor
