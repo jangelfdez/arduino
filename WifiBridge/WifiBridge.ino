@@ -10,8 +10,8 @@
 //const char *ssid = "test-serie";
 //const char *password = NULL;
 
-const char* ssid = "LasColumnas";             // Change this to your WiFi SSID
-const char* password = "Passw0rd!Passw0rd!";  // Change this to your WiFi password
+const char* ssid = "LaCasaDomotica";             // Change this to your WiFi SSID
+const char* password = "";  // Change this to your WiFi password
 
 String blind_status = "Subida";
 String garage_status = "Cerrada";
@@ -32,26 +32,26 @@ void setup() {
   Serial.print("Connecting to ");
   Serial.println(ssid);
 
-  WiFi.begin(ssid, password);
+  //WiFi.begin(ssid, password);
 
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-
-  Serial.println("");
-  Serial.println("WiFi connected");
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
-
-  // if (!WiFi.softAP(ssid, password)) {
-  //   Serial.println("Soft AP creation failed.");
-  //   while (1)
-  //     ;
+  // while (WiFi.status() != WL_CONNECTED) {
+  //   delay(500);
+  //   Serial.print(".");
   // }
-  // IPAddress myIP = WiFi.softAPIP();
-  // Serial.print("AP IP address: ");
-  // Serial.println(myIP);
+
+  // Serial.println("");
+  // Serial.println("WiFi connected");
+  // Serial.println("IP address: ");
+  // Serial.println(WiFi.localIP());
+
+  if (!WiFi.softAP(ssid, password)) {
+    Serial.println("Soft AP creation failed.");
+    while (1)
+      ;
+  }
+  IPAddress myIP = WiFi.softAPIP();
+  Serial.print("AP IP address: ");
+  Serial.println(myIP);
   server.begin();
 
 
@@ -102,151 +102,174 @@ void loop() {
 
         // Check to see if the client request was "GET /H" or "GET /L":
         if (currentLine.endsWith("GET /0")) {
-          //Serial.println("0 [Read Garage Door Status]");
+          Serial.println("0 [Read Garage Door Status]");
           Serial0.write("0");
-          //delay(2000);
-          //String incoming_command = Serial0.readString();
-          //Serial.println("RX Command > " + incoming_command);
+          delay(500);
+          String incoming_command = Serial0.readString();
+          Serial.println("RX Command > " + incoming_command);
+          
           Serial.println("0");
           client.println("HTTP/1.1 200 OK");
           client.println("Content-type:text/html");
           client.println();
 
           // the content of the HTTP response follows the header:
-          client.print(garage_status);
+          client.print(incoming_command);
 
           // The HTTP response ends with another blank line:
           client.println();
         }
         if (currentLine.endsWith("GET /1")) {
-          //Serial.println("1 [Open Garage Door]");
+          Serial.println("1 [Open Garage Door]");
           Serial0.write("1");  // print it out the serial monitor
-          //delay(2000);
-          //String incoming_command = Serial0.readString();
-          //Serial.println("RX Command > " + incoming_command);
-          Serial.println("1");
-          garage_status = "Abierta";
+          delay(500);
+          String incoming_command = Serial0.readString();
+          Serial.println("RX Command > " + incoming_command);
+  
           client.println("HTTP/1.1 200 OK");
           client.println("Content-type:text/html");
           client.println();
 
           // the content of the HTTP response follows the header:
-          client.print("OK");
+          client.print(incoming_command);
 
           // The HTTP response ends with another blank line:
           client.println();
         }
         if (currentLine.endsWith("GET /2")) {
-          //Serial.println("2 [Close Garage Door]");
+          Serial.println("2 [Close Garage Door]");
 
-          Serial0.write("2");  // print it out the serial monitor
-          Serial.println("2");
-          garage_status = "Cerrada";
+          Serial0.write("2");  // print it out the serial monitor 
+          delay(500);
+          String incoming_command = Serial0.readString();
+          Serial.println("RX Command > " + incoming_command);
+
           client.println("HTTP/1.1 200 OK");
           client.println("Content-type:text/html");
           client.println();
 
           // the content of the HTTP response follows the header:
-          client.print("OK");
+          client.print(incoming_command);
 
           // The HTTP response ends with another blank line:
           client.println();
         }
         if (currentLine.endsWith("GET /3")) {
-          //Serial.println("3 [Read House Temperature]");
-
+          Serial.println("3 [Read House Temperature]");
           Serial0.write("3");  // print it out the serial monitor
+          delay(500);
+          String incoming_command = Serial0.readString();
+          Serial.println("RX Command > " + incoming_command);
 
           client.println("HTTP/1.1 200 OK");
           client.println("Content-type:text/html");
           client.println();
 
           // the content of the HTTP response follows the header:
-          client.print("20ºC");
+          client.print(incoming_command);
 
           // The HTTP response ends with another blank line:
           client.println();
         }
         if (currentLine.endsWith("GET /4")) {
-          //Serial.println("4 [Read House Humidity]");
+          Serial.println("4 [Read House Humidity]");
 
           Serial0.write("4");  // print it out the serial monitor
-        }
-        if (currentLine.endsWith("GET /5")) {
-          //Serial.println("5 [Read Movement Sensor Status]");
-
-          Serial0.write("5");  // print it out the serial monitor
-          
-          Serial.println("5");
+          delay(500);
+          String incoming_command = Serial0.readString();
+          Serial.println("RX Command > " + incoming_command);
           client.println("HTTP/1.1 200 OK");
           client.println("Content-type:text/html");
           client.println();
 
           // the content of the HTTP response follows the header:
-          client.print(movement_status);
+          client.print(incoming_command);
+
+          // The HTTP response ends with another blank line:
+          client.println();
+        }
+        if (currentLine.endsWith("GET /5")) {
+          Serial.println("5 [Read Movement Sensor Status]");
+
+          Serial0.write("5");  // print it out the serial monitor
+          delay(500);
+          String incoming_command = Serial0.readString();
+          Serial.println("RX Command > " + incoming_command);
+          client.println("HTTP/1.1 200 OK");
+          client.println("Content-type:text/html");
+          client.println();
+
+          // the content of the HTTP response follows the header:
+          client.print(incoming_command);
 
           // The HTTP response ends with another blank line:
           client.println();
         }
         if (currentLine.endsWith("GET /6")) {
-          //Serial.println("6 [Read Outside Lights Status]");
+          Serial.println("6 [Read Outside Lights Status]");
 
           Serial0.write("6");  // print it out the serial monitor
-
-          Serial.println("6");
+          delay(500);
+          String incoming_command = Serial0.readString();
+          Serial.println("RX Command > " + incoming_command);
           client.println("HTTP/1.1 200 OK");
           client.println("Content-type:text/html");
           client.println();
 
           // the content of the HTTP response follows the header:
-          client.print(light_status);
+          client.print(incoming_command);
 
           // The HTTP response ends with another blank line:
           client.println();
         }
         if (currentLine.endsWith("GET /7")) {
-          //Serial.println("7 [Read Blind Status]");
+          Serial.println("7 [Read Blind Status]");
 
           Serial0.write("7");  // print it out the serial monitor
-          Serial.println("7");
+          delay(500);
+          String incoming_command = Serial0.readString();
+          Serial.println("RX Command > " + incoming_command);
           client.println("HTTP/1.1 200 OK");
           client.println("Content-type:text/html");
           client.println();
 
           // the content of the HTTP response follows the header:
-          client.print(blind_status);
+          client.print(incoming_command);
 
           // The HTTP response ends with another blank line:
           client.println();
         }
         if (currentLine.endsWith("GET /8")) {
-          //Serial.println("8 [Open Blind]");
+          Serial.println("8 [Open Blind]");
 
           Serial0.write("8");  // print it out the serial monitor
-          Serial.println("8");
-          blind_status = "Subida";
+          delay(500);
+          String incoming_command = Serial0.readString();
+          Serial.println("RX Command > " + incoming_command);
           client.println("HTTP/1.1 200 OK");
           client.println("Content-type:text/html");
           client.println();
 
           // the content of the HTTP response follows the header:
-          client.print("OK");
+          client.print(incoming_command);
 
           // The HTTP response ends with another blank line:
           client.println();
         }
         if (currentLine.endsWith("GET /9")) {
-          //Serial.println("9 [Close Blind]");
+          Serial.println("9 [Close Blind]");
 
           Serial0.write("9");  // print it out the serial monitor
-          Serial.println("9");
-          blind_status = "Bajada";
+          delay(500);
+          String incoming_command = Serial0.readString();
+          Serial.println("RX Command > " + incoming_command);
+
           client.println("HTTP/1.1 200 OK");
           client.println("Content-type:text/html");
           client.println();
 
           // the content of the HTTP response follows the header:
-          client.print("OK");
+          client.print(incoming_command);
 
           // The HTTP response ends with another blank line:
           client.println();

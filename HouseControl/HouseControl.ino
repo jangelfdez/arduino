@@ -96,7 +96,8 @@ void loop() {
       case 5:
         {
           //Serial.println("5 [Read Movement Sensor Status]");
-          garage_door_status = digitalRead(MOVEMENT_SENSOR_INPUT_PORT);
+          movement_sensor_status = digitalRead(MOVEMENT_SENSOR_INPUT_PORT);
+          Serial.println(movement_sensor_status);
           break;
         }
       case 6:
@@ -108,7 +109,8 @@ void loop() {
       case 7:
         {
           //Serial.println("7 [Read Blind Status]");
-          Serial.println(String(blind_status));
+          blind_status = String(blind_status);
+          Serial.println(blind_status);
           break;
         }
       case 8:
